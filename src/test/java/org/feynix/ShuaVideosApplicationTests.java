@@ -1,4 +1,4 @@
-package com.feynix.shuavideos;
+package org.feynix;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
