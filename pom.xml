@@ -70,7 +70,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>org.feynix.ShuaVideosApplication</mainClass>
+                    <mainClass>org.shuavideos.ShuaVideosApplication</mainClass>
                     <skip>true</skip>
                 </configuration>
                 <executions>
