@@ -1,0 +1,34 @@
+spring:
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: ${MAIL_NAME:1048218204@qq.com}
+    password: ${MAIL_PASSWORD:hviaqluahwpcbfgb}
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  datasource:
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+    url: jdbc:p6spy:mysql://${DATASOURCE_HOST:127.0.0.1:3306}/${DATASOURCE_NAME:shuavideos}?serverTimezone=GMT%2B8
+    username: ${DATASOURCE_USER:root}
+    password: ${DATASOURCE_PASSWORD:1234}
+  redis:
+    host: ${REDIS_HOST:192.168.109.135}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:123321}
+
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field: is_deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# \u5E94\u7528\u670D\u52A1 WEB \u8BBF\u95EE\u7AEF\u53E3
+server:
+  port: ${SERVER_PORT:8883}
