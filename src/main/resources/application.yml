@@ -29,6 +29,12 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
+qiniu:
+  kodo:
+    access-key: ${QINIU_KODO_ACCESS:8XU6iBjD7vTLU1A3bJCju5_nU9eUGf4I7C4c14Nq}
+    secret-key: ${QINIU_KODO_SECRET:0BzmRukto9R8cBVqdUELrhNB2Q7vJJGxXx_Ye7Yi}
+    bucket-name: ${QINIU_KODO_BUCKET:feynix-videos1}
+
 # \u5E94\u7528\u670D\u52A1 WEB \u8BBF\u95EE\u7AEF\u53E3
 server:
   port: ${SERVER_PORT:8883}
