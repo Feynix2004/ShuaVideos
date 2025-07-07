@@ -1,5 +1,8 @@
 package org.shuavideos.entity.json;
 
+import lombok.Data;
+
+@Data
 public class SettingScoreJson {
     //通过
     ScoreJson successScore;

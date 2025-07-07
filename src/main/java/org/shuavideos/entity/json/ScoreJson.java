@@ -1,5 +1,8 @@
 package org.shuavideos.entity.json;
 
+import lombok.Data;
+
+@Data
 public class ScoreJson {
     Double minPulp;
     Double maxPulp;

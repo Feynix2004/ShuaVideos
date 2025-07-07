@@ -41,4 +41,12 @@ public class QiNiuConfig {
         return auth.uploadToken(bucketName, null, 300, new
                 StringMap().put("mimeLimit", "video/*;image/*"));
     }
+
+
+    public String getToken(String url, String method, String body, String contentType) {
+
+        final Auth auth = buildAuth();
+        String qiniuToken = "Qiniu " + auth.signQiniuAuthorization(url, method, body == null ? null : body.getBytes(), contentType);
+        return qiniuToken;
+    }
 }
