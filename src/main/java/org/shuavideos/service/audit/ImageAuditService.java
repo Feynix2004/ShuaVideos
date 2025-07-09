@@ -10,6 +10,7 @@ import org.shuavideos.constant.AuditStatus;
 import org.shuavideos.entity.Setting;
 import org.shuavideos.entity.json.*;
 import org.shuavideos.entity.response.AuditResponse;
+import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class ImageAuditService extends AbstractAuditService<String, AuditResponse>{
     static String imageUrl = "http://ai.qiniuapi.com/v3/image/censor";
     static String imageBody = "{\n" +

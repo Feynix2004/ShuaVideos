@@ -58,7 +58,10 @@ public class FavoritesServiceImpl extends ServiceImpl<FavoritesMapper, Favorites
     }
 
     @Override
-    public void exist(Long userId, Long defaultFavoritesId) {
-
+    public void exist(Long userId, Long fId) {
+        final int count = count(new LambdaQueryWrapper<Favorites>().eq(Favorites::getUserId, userId).eq(Favorites::getId, fId));
+        if (count == 0){
+            throw new BaseException("收藏夹选择错误");
+        }
     }
 }
