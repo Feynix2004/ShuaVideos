@@ -15,7 +15,14 @@ public interface FavoritesService extends IService<Favorites> {
 
     List<Long> listVideoIds(Long favoritesId, Long userId);
 
-    boolean favorites(Long fId, Long vId);
+    /**
+     * 收藏视频
+     *
+     * @param fId
+     * @param vId
+     * @param uId
+     */
+    boolean favorites(Long fId, Long vId, Long uId);
 
     Boolean favoritesState(Long videoId, Long userId);
 

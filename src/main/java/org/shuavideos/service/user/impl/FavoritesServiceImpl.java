@@ -9,11 +9,13 @@ import org.shuavideos.mapper.user.FavoritesMapper;
 import org.shuavideos.service.user.FavoritesService;
 import org.shuavideos.service.user.FavoritesVideoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.filter.OrderedHiddenHttpMethodFilter;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class FavoritesServiceImpl extends ServiceImpl<FavoritesMapper, Favorites> implements FavoritesService {
@@ -38,8 +40,22 @@ public class FavoritesServiceImpl extends ServiceImpl<FavoritesMapper, Favorites
     }
 
     @Override
-    public List<Favorites> listByUserId(Long uerId) {
-        return Collections.emptyList();
+    public List<Favorites> listByUserId(Long userId) {
+        // 查出收藏夹id
+        final List<Favorites> favorites = list(new LambdaQueryWrapper<Favorites>().eq(Favorites::getUserId, userId));
+        if (ObjectUtils.isEmpty(favorites)) return Collections.EMPTY_LIST;
+        // 根据收藏夹id获取对应数
+        final List<Long> fIds = favorites.stream().map(Favorites::getId).collect(Collectors.toList());
+        final Map<Long, Long> fMap = favoritesVideoService.list(new LambdaQueryWrapper<FavoritesVideo>().in(FavoritesVideo::getFavoritesId, fIds))
+                .stream().collect(Collectors.groupingBy(FavoritesVideo::getFavoritesId,
+                        Collectors.counting()));
+        // 计算对应视频总数
+        for (Favorites favorite : favorites) {
+            final Long videoCount = fMap.get(favorite.getId());
+            favorite.setVideoCount(videoCount == null ? 0 :videoCount);
+        }
+
+        return favorites;
     }
 
     @Override
@@ -48,8 +64,20 @@ public class FavoritesServiceImpl extends ServiceImpl<FavoritesMapper, Favorites
     }
 
     @Override
-    public boolean favorites(Long fId, Long vId) {
-        return false;
+    public boolean favorites(Long fId, Long vId, Long uId) {
+        try {
+            final FavoritesVideo favoritesVideo = new FavoritesVideo();
+            favoritesVideo.setFavoritesId(fId);
+            favoritesVideo.setVideoId(vId);
+            favoritesVideo.setUserId(uId);
+            favoritesVideoService.save(favoritesVideo);
+
+        }catch (Exception e){
+            favoritesVideoService.remove(new LambdaQueryWrapper<FavoritesVideo>().eq(FavoritesVideo::getFavoritesId, fId)
+                    .eq(FavoritesVideo::getVideoId, vId).eq(FavoritesVideo::getUserId, uId));
+            return false;
+        }
+        return true;
     }
 
     @Override

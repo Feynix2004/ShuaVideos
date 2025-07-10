@@ -12,4 +12,14 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     IPage<Video> listByUserIdOpenVideo(Long userId, BasePage basePage);
+
+    /**
+     * 收藏视频
+     *
+     * @param fId
+     * @param vId
+     * @param uId
+     * @return
+     */
+    boolean favoritesVideo(Long fId, Long vId, Long uId);
 }
