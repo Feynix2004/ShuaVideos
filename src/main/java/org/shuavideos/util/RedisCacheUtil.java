@@ -125,4 +125,9 @@ public class RedisCacheUtil {
         return redisTemplate.opsForHash().entries(key);
 
     }
+
+    // 接受一个管道
+    public List pipeline(RedisCallback redisCallback){
+        return redisTemplate.executePipelined(redisCallback);
+    }
 }

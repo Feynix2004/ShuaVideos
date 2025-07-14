@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.shuavideos.entity.video.Video;
 import org.shuavideos.entity.vo.BasePage;
+import org.shuavideos.entity.vo.HotVideo;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface VideoService extends IService<Video> {
     /**
@@ -38,4 +40,25 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     Collection<Video> getVideoByTypeId(Long typeId);
+
+    /**
+     * 获取N天前的视频
+     * @param id id
+     * @param days 天数
+     * @param limit 限制
+     * @return
+     */
+    List<Video> selectNDaysAgeVideo(long id, int days, int limit);
+
+    /**
+     * 获取热度排行榜
+     * @return
+     */
+    Collection<HotVideo> hotRank();
+
+    /**
+     * 获取热门视频
+     * @return
+     */
+    Collection<Video> listHotVideo();
 }

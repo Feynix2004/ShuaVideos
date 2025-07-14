@@ -22,4 +22,11 @@ public interface RedisConstant {
 
     // 系统分类库，用于查询分类下的视频随机获取
     String SYSTEM_TYPE_STOCK = "system:type:stock:";
+
+    // 热门排行榜
+    String HOT_RANK = "hot:rank";
+
+    // 热门视频
+    String HOT_VIDEO = "hot:video:";
+
 }

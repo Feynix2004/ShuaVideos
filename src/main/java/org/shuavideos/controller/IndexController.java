@@ -43,4 +43,22 @@ public class IndexController {
 
         return R.ok().data(videoService.getVideoByTypeId(typeId));
     }
+
+    /**
+     * 获取热度排行榜
+     * @return
+     */
+    @GetMapping("/video/hot/rank")
+    public R listHotRank(){
+        return R.ok().data(videoService.hotRank());
+    }
+
+    /**
+     * 推送热门视频
+     * @return
+     */
+    @GetMapping("/video/hot")
+    public R listHotVideo(){
+        return R.ok().data(videoService.listHotVideo());
+    }
 }
