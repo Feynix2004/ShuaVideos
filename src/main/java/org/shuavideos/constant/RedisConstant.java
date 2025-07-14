@@ -12,4 +12,14 @@ public interface RedisConstant {
     // 用户粉丝
     String USER_FANS = "user:fans:";
 
+    String USER_MODEL="user:model";
+
+    // 用于兴趣推送时去重   和下面的浏览记录存储数据结构不同  这里只需要存id
+    String HISTORY_VIDEO = "history:video:";
+
+    // 系统视频库,每个公开的都会存在这
+    String SYSTEM_STOCK = "system:stock:";
+
+    // 系统分类库，用于查询分类下的视频随机获取
+    String SYSTEM_TYPE_STOCK = "system:type:stock:";
 }

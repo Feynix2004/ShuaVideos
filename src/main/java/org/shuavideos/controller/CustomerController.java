@@ -3,15 +3,20 @@ package org.shuavideos.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.shuavideos.entity.user.Favorites;
 import org.shuavideos.entity.vo.BasePage;
+import org.shuavideos.entity.vo.Model;
 import org.shuavideos.entity.vo.UpdateUserVO;
+import org.shuavideos.entity.vo.UserModel;
 import org.shuavideos.holder.UserHolder;
 import org.shuavideos.service.user.FavoritesService;
 import org.shuavideos.service.user.UserService;
 import org.shuavideos.util.R;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 @RestController
@@ -126,6 +131,40 @@ public class CustomerController {
         return R.ok().data(favoritesService.getOne(new LambdaQueryWrapper<Favorites>().eq(Favorites::getUserId, userId).eq(Favorites::getId, id)));
     }
 
+    /**
+     * 订阅分类
+     */
+    @PostMapping("/subscribe")
+    public R subscribe(@RequestParam(required = false) String types){
+        final HashSet<Long> typeSet = new HashSet<>();
+        String msg = "取消订阅";
+        if (!ObjectUtils.isEmpty(types)){
+            for (String s : types.split(",")) {
+                typeSet.add(Long.parseLong(s));
+            }
+            msg = "订阅成功";
+        }
+        userService.subscribe(typeSet);
+        return R.ok().message(msg);
+    }
+
+
+    /**
+     * 用户停留时长修改模型
+     * @param model
+     * @return
+     */
+    @PostMapping("/updateUserModel")
+    public R updateUserModel(@RequestBody Model model){
+        final Double score = model.getScore();
+        if (score == -0.5 || score == 1.0){
+            final UserModel userModel = new UserModel();
+            userModel.setUserId(UserHolder.get());
+            userModel.setModels(Collections.singletonList(model));
+            userService.updateUserModel(userModel);
+        }
+        return R.ok();
+    }
 
 
 }

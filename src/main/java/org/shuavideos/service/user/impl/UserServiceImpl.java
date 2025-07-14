@@ -9,19 +9,26 @@ import org.shuavideos.constant.RedisConstant;
 import org.shuavideos.entity.response.AuditResponse;
 import org.shuavideos.entity.user.Favorites;
 import org.shuavideos.entity.user.User;
+import org.shuavideos.entity.user.UserSubscribe;
+import org.shuavideos.entity.video.Type;
 import org.shuavideos.entity.vo.*;
 import org.shuavideos.exception.BaseException;
+import org.shuavideos.holder.UserHolder;
 import org.shuavideos.mapper.user.UserMapper;
 import org.shuavideos.service.FileService;
+import org.shuavideos.service.InterestPushService;
 import org.shuavideos.service.audit.ImageAuditService;
 import org.shuavideos.service.audit.TextAuditService;
 import org.shuavideos.service.user.FavoritesService;
 import org.shuavideos.service.user.FollowService;
 import org.shuavideos.service.user.UserService;
+import org.shuavideos.service.user.UserSubscribeService;
+import org.shuavideos.service.video.TypeService;
 import org.shuavideos.util.RedisCacheUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.util.*;
@@ -48,6 +55,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private FileService fileService;
+
+
+    @Autowired
+    private TypeService typeService ;
+
+    @Autowired
+    private UserSubscribeService userSubscribeService;
+
+    @Autowired
+    private InterestPushService interestPushService;
 
     @Override
     public UserVO getInfo(Long userId) {
@@ -237,5 +254,48 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         page.setRecords(users);
         page.setTotal(users.size());
         return page;
+    }
+
+    @Override
+    @Transactional
+    public void subscribe(Set<Long> typeIds) {
+        if (ObjectUtils.isEmpty(typeIds)) return;
+        // 校验分类
+        final Collection<Type> types = typeService.listByIds(typeIds);
+        if (typeIds.size()!=types.size()){
+            throw new BaseException("不存在的分类");
+        }
+        final Long userId = UserHolder.get();
+        final ArrayList<UserSubscribe> userSubscribes = new ArrayList<>();
+        for (Long typeId : typeIds) {
+            final UserSubscribe userSubscribe = new UserSubscribe();
+            userSubscribe.setUserId(userId);
+            userSubscribe.setTypeId(typeId);
+            userSubscribes.add(userSubscribe);
+        }
+        // 删除之前的
+        userSubscribeService.remove(new LambdaQueryWrapper<UserSubscribe>().eq(UserSubscribe::getUserId,userId));
+        userSubscribeService.saveBatch(userSubscribes);
+        // 初始化模型
+        final ModelVO modelVO = new ModelVO();
+        modelVO.setUserId(UserHolder.get());
+        // 获取分类下的标签
+        List<String> labels = new ArrayList();
+        for (Type type : types) {
+            labels.addAll(type.buildLabel());
+        }
+        modelVO.setLabels(labels);
+        initModel(modelVO);
+
+    }
+
+    @Override
+    public void updateUserModel(UserModel userModel) {
+        interestPushService.updateUserModel(userModel);
+    }
+
+    public void initModel(ModelVO modelVO) {
+        // 初始化模型
+        interestPushService.initUserModel(modelVO.getUserId(),modelVO.getLabels());
     }
 }

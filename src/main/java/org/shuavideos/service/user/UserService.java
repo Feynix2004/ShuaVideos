@@ -7,7 +7,9 @@ import org.shuavideos.entity.user.User;
 import org.shuavideos.entity.vo.*;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public interface UserService extends IService<User> {
 
@@ -62,4 +64,13 @@ public interface UserService extends IService<User> {
      * @return
      */
     Page<User> getFans(Long userId, BasePage basePage);
+
+
+    /**
+     * 订阅分类
+     * @param typeIds
+     */
+    void subscribe(Set<Long> typeIds);
+
+    void updateUserModel(UserModel userModel);
 }

@@ -6,10 +6,7 @@ import org.shuavideos.service.video.VideoService;
 import org.shuavideos.util.JwtUtils;
 import org.shuavideos.util.R;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -34,5 +31,16 @@ public class IndexController {
 
         userId = userId == null ? JwtUtils.getUserId(request) : userId;
         return R.ok().data(videoService.listByUserIdOpenVideo(userId,basePage));
+    }
+
+    /**
+     * 根据视频分类获取
+     * @param typeId
+     * @return
+     */
+    @GetMapping("/video/type/{typeId}")
+    public R getVideoByTypeId(@PathVariable Long typeId){
+
+        return R.ok().data(videoService.getVideoByTypeId(typeId));
     }
 }
