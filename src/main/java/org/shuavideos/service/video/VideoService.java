@@ -61,4 +61,11 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     Collection<Video> listHotVideo();
+
+    /**
+     * 根据标签推送相似视频
+     * @param video
+     * @return
+     */
+    Collection<Video> listSimilarVideo(Video video);
 }

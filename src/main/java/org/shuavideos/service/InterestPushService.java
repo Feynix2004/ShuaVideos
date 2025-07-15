@@ -37,4 +37,13 @@ public interface InterestPushService {
      * @return
      */
     Collection<Long> listVideoIdByTypeId(Long typeId);
+
+
+    /**
+     * 根据标签获取视频id
+     * @param labelNames
+     * @return
+     */
+    Collection<Long> listVideoIdByLabels(List<String> labelNames);
+
 }

@@ -184,6 +184,20 @@ public class InterestPushServiceImpl implements InterestPushService {
         return result;
     }
 
+    @Override
+    public Collection<Long> listVideoIdByLabels(List<String> labelNames) {
+        final ArrayList<String> labelKeys = new ArrayList<>();
+        for (String labelName : labelNames) {
+            labelKeys.add(RedisConstant.SYSTEM_STOCK + labelName);
+        }
+        Set<Long> videoIds = new HashSet<>();
+        final List<Object> list = redisCacheUtil.sRandom(labelKeys);
+        if (!ObjectUtils.isEmpty(list)){
+            videoIds = list.stream().filter(id ->!ObjectUtils.isEmpty(id)).map(id -> Long.valueOf(id.toString())).collect(Collectors.toSet());
+        }
+        return videoIds;
+    }
+
     public Long randomVideoId(Boolean sex) {
         String key = RedisConstant.SYSTEM_STOCK + (sex ? "美女" : "宠物");
         final Object o = redisCacheUtil.sRandom(key);

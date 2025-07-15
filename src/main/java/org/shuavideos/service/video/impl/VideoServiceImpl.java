@@ -198,6 +198,27 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         return videos;
     }
 
+    @Override
+    public Collection<Video> listSimilarVideo(Video video) {
+        if (ObjectUtils.isEmpty(video) || ObjectUtils.isEmpty(video.getLabelNames())) return Collections.EMPTY_LIST;
+        final List<String> labels = video.buildLabel();
+        final ArrayList<String> labelNames = new ArrayList<>();
+        labelNames.addAll(labels);
+        labelNames.addAll(labels);
+        final Set<Long> videoIds = (Set<Long>) interestPushService.listVideoIdByLabels(labelNames);
+
+        Collection<Video> videos = new ArrayList<>();
+
+        // 去重
+        videoIds.remove(video.getId());
+
+        if (!ObjectUtils.isEmpty(videoIds)) {
+            videos = listByIds(videoIds);
+            setUserVoAndUrl(videos);
+        }
+        return videos;
+    }
+
     /**
      * 点赞数
      *

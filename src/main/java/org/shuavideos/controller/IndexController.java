@@ -1,6 +1,7 @@
 package org.shuavideos.controller;
 
 
+import org.shuavideos.entity.video.Video;
 import org.shuavideos.entity.vo.BasePage;
 import org.shuavideos.service.video.VideoService;
 import org.shuavideos.util.JwtUtils;
@@ -61,4 +62,15 @@ public class IndexController {
     public R listHotVideo(){
         return R.ok().data(videoService.listHotVideo());
     }
+
+    /**
+     * 根据视频标签推送相似视频
+     * @param video
+     * @return
+     */
+    @GetMapping("/video/similar")
+    public R pushVideoSimilar(Video video){
+        return R.ok().data(videoService.listSimilarVideo(video));
+    }
+
 }
