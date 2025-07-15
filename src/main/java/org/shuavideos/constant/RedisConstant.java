@@ -29,4 +29,12 @@ public interface RedisConstant {
     // 热门视频
     String HOT_VIDEO = "hot:video:";
 
+    // 收件箱
+    String IN_FOLLOW = "in:follow:feed:";
+
+    // 发件箱
+    String OUT_FOLLOW = "out:follow:feed:";
+
+    Long HISTORY_TIME = 432000L;
+
 }

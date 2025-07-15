@@ -21,9 +21,11 @@ import org.shuavideos.entity.vo.UserVO;
 import org.shuavideos.exception.BaseException;
 import org.shuavideos.holder.UserHolder;
 import org.shuavideos.mapper.video.VideoMapper;
+import org.shuavideos.service.FeedService;
 import org.shuavideos.service.FileService;
 import org.shuavideos.service.InterestPushService;
 import org.shuavideos.service.user.FavoritesService;
+import org.shuavideos.service.user.FollowService;
 import org.shuavideos.service.user.UserService;
 import org.shuavideos.service.video.TypeService;
 import org.shuavideos.service.video.VideoService;
@@ -69,7 +71,15 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Autowired
     private RedisCacheUtil redisCacheUtil;
 
+    @Autowired
+    private FollowService followService;
+
+    @Autowired
+    private FeedService feedService;
+
     final ObjectMapper objectMapper = new ObjectMapper();
+
+
 
     @Override
     public IPage<Video> listByUserIdOpenVideo(Long userId, BasePage basePage) {
@@ -216,6 +226,32 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             videos = listByIds(videoIds);
             setUserVoAndUrl(videos);
         }
+        return videos;
+    }
+
+    @Override
+    public void updateFollowFeed(Long userId) {
+        // 获取所有关注的人
+        final Collection<Long> followIds = followService.getFollow(userId, null);
+        feedService.updateFollowFeed(userId, followIds);
+    }
+
+    @Override
+    public Collection<Video> followFeed(Long userId, Long lastTime) {
+//        return Collections.emptyList();
+        // 是否存在
+        Set<Long> set = redisTemplate.opsForZSet()
+                .reverseRangeByScore(RedisConstant.IN_FOLLOW + userId,
+                        0, lastTime == null ? new Date().getTime() : lastTime, lastTime == null ? 0 : 1, 5);
+        if (ObjectUtils.isEmpty(set)) {
+            // 可能只是缓存中没有了,缓存只存储7天内的关注视频,继续往后查看关注的用户太少了,不做考虑 - feed流必然会产生的问题
+            return Collections.EMPTY_LIST;
+        }
+
+        // 这里不会按照时间排序，需要手动排序
+        final Collection<Video> videos = list(new LambdaQueryWrapper<Video>().in(Video::getId, set).orderByDesc(Video::getGmtCreated));
+
+        setUserVoAndUrl(videos);
         return videos;
     }
 

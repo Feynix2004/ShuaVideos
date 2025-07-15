@@ -14,4 +14,15 @@ public class DateUtil {
 
     }
 
+    /**
+     * 对日期的【天】进行加/减
+     *
+     * @param date 日期
+     * @param days 天数，负数为减
+     * @return 加/减几天后的日期
+     */
+    public static Date addDateDays(Date date, int days) {
+        DateTime dateTime = new DateTime(date);
+        return dateTime.plusDays(days).toDate();
+    }
 }

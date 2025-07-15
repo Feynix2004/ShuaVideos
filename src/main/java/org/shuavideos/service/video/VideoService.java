@@ -68,4 +68,20 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     Collection<Video> listSimilarVideo(Video video);
+
+
+
+    /**
+     * 拉模式
+     * @param userId
+     */
+    void updateFollowFeed(Long userId);
+
+    /**
+     * 关注流
+     * @param userId 用户id
+     * @param lastTime 滚动分页参数，首次为null，后续为上次的末尾视频时间
+     * @return
+     */
+    Collection<Video> followFeed(Long userId,Long lastTime);
 }
