@@ -1,9 +1,12 @@
 package org.shuavideos.controller;
 
+import org.shuavideos.entity.video.Video;
 import org.shuavideos.holder.UserHolder;
+import org.shuavideos.limit.Limit;
 import org.shuavideos.service.video.VideoService;
 import org.shuavideos.util.R;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -53,4 +56,14 @@ public class VideoController {
         return R.ok().data(videoService.followFeed(userId,lastTime));
     }
 
+    /**发布视频/修改视频
+     * @param video
+     * @return
+     */
+    @PostMapping
+    @Limit(limit = 5,time = 3600L,msg = "发布视频一小时内不可超过5次")
+    public R publishVideo(@RequestBody @Validated Video video){
+        videoService.publishVideo(video);
+        return R.ok().message("发布成功,请等待审核");
+    }
 }

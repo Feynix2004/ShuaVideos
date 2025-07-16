@@ -2,6 +2,7 @@ package org.shuavideos.service.impl;
 
 import org.shuavideos.constant.RedisConstant;
 import org.shuavideos.entity.user.User;
+import org.shuavideos.entity.video.Video;
 import org.shuavideos.entity.vo.Model;
 import org.shuavideos.entity.vo.UserModel;
 import org.shuavideos.service.InterestPushService;
@@ -196,6 +197,45 @@ public class InterestPushServiceImpl implements InterestPushService {
             videoIds = list.stream().filter(id ->!ObjectUtils.isEmpty(id)).map(id -> Long.valueOf(id.toString())).collect(Collectors.toSet());
         }
         return videoIds;
+    }
+
+    @Override
+    public void deleteSystemStockIn(Video video) {
+        final List<String> labels = video.buildLabel();
+        final Long videoId = video.getId();
+        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            for (String label : labels) {
+                connection.sRem((RedisConstant.SYSTEM_STOCK + label).getBytes(),String.valueOf(videoId).getBytes());
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public void deleteSystemTypeStockIn(Video video) {
+        final Long typeId = video.getTypeId();
+        redisCacheUtil.setRemove(RedisConstant.SYSTEM_TYPE_STOCK + typeId,video.getId());
+    }
+
+    @Override
+    @Async
+    public void pushSystemTypeStockIn(Video video) {
+        final Long typeId = video.getTypeId();
+        redisCacheUtil.sSet(RedisConstant.SYSTEM_TYPE_STOCK + typeId,video.getId());
+    }
+
+    @Override
+    @Async
+    public void pushSystemStockIn(Video video) {
+        // 往系统库中添加
+        final List<String> labels = video.buildLabel();
+        final Long videoId = video.getId();
+        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            for (String label : labels) {
+                connection.sAdd((RedisConstant.SYSTEM_STOCK + label).getBytes(),String.valueOf(videoId).getBytes());
+            }
+            return null;
+        });
     }
 
     public Long randomVideoId(Boolean sex) {

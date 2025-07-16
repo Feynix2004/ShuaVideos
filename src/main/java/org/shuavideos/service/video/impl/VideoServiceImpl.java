@@ -7,9 +7,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.shuavideos.config.LocalCache;
+import org.shuavideos.config.QiNiuConfig;
 import org.shuavideos.constant.AuditStatus;
 import org.shuavideos.constant.RedisConstant;
 import org.shuavideos.entity.File;
+import org.shuavideos.entity.task.VideoTask;
 import org.shuavideos.entity.user.User;
 import org.shuavideos.entity.video.Type;
 import org.shuavideos.entity.video.Video;
@@ -24,18 +27,21 @@ import org.shuavideos.mapper.video.VideoMapper;
 import org.shuavideos.service.FeedService;
 import org.shuavideos.service.FileService;
 import org.shuavideos.service.InterestPushService;
+import org.shuavideos.service.audit.VideoPublishAuditServiceImpl;
 import org.shuavideos.service.user.FavoritesService;
 import org.shuavideos.service.user.FollowService;
 import org.shuavideos.service.user.UserService;
 import org.shuavideos.service.video.TypeService;
 import org.shuavideos.service.video.VideoService;
 import org.shuavideos.service.video.VideoStarService;
+import org.shuavideos.util.FileUtil;
 import org.shuavideos.util.RedisCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.function.Function;
@@ -79,7 +85,8 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     final ObjectMapper objectMapper = new ObjectMapper();
 
-
+    @Autowired
+    VideoPublishAuditServiceImpl videoPublishAuditService;
 
     @Override
     public IPage<Video> listByUserIdOpenVideo(Long userId, BasePage basePage) {
@@ -253,6 +260,80 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
         setUserVoAndUrl(videos);
         return videos;
+    }
+
+    @Override
+    public void publishVideo(Video video) {
+
+        final Long userId = UserHolder.get();
+        Video oldVideo = null;
+        // 不允许修改视频
+        final Long videoId = video.getId();
+        if (videoId != null) {
+            // url不能一致
+            oldVideo = this.getOne(new LambdaQueryWrapper<Video>().eq(Video::getId, videoId).eq(Video::getUserId, userId));
+            if (!(video.buildVideoUrl()).equals(oldVideo.buildVideoUrl()) || !(video.buildCoverUrl().equals(oldVideo.buildCoverUrl()))) {
+                throw new BaseException("不能更换视频源,只能修改视频信息");
+            }
+        }
+        // 判断对应分类是否存在
+        final Type type = typeService.getById(video.getTypeId());
+        if (type == null) {
+            throw new BaseException("分类不存在");
+        }
+        // 校验标签最多不能超过5个
+        if (video.buildLabel().size() > 5) {
+            throw new BaseException("标签最多只能选择5个");
+        }
+
+        // 修改状态
+        video.setAuditStatus(AuditStatus.PROCESS);
+        video.setUserId(userId);
+
+        boolean isAdd = videoId == null ? true : false;
+
+        // 校验
+        video.setYv(null);
+
+        if (!isAdd) {
+            video.setVideoType(null);
+            video.setLabelNames(null);
+            video.setUrl(null);
+            video.setCover(null);
+        } else {
+
+            // 如果没设置封面,我们帮他设置一个封面
+            if (ObjectUtils.isEmpty(video.getCover())) {
+                video.setCover(fileService.generatePhoto(video.getUrl(), userId));
+            }
+
+            video.setYv("YV" + UUID.randomUUID().toString().replace("-", "").substring(8));
+        }
+
+        // 填充视频时长 (若上次发布视频不存在Duration则会尝试获取)
+        if (isAdd || !StringUtils.hasLength(oldVideo.getDuration())) {
+            final String uuid = UUID.randomUUID().toString();
+            LocalCache.put(uuid, true);
+            try {
+                Long url = video.getUrl();
+                if (url == null || url == 0) url = oldVideo.getUrl();
+                final String fileKey = fileService.getById(url).getFileKey();
+                final String duration = FileUtil.getVideoDuration(QiNiuConfig.CNAME + "/" + fileKey + "?uuid=" + uuid);
+                video.setDuration(duration);
+            } finally {
+                LocalCache.rem(uuid);
+            }
+        }
+
+        this.saveOrUpdate(video);
+
+        final VideoTask videoTask = new VideoTask();
+        videoTask.setOldVideo(video);
+        videoTask.setVideo(video);
+        videoTask.setIsAdd(isAdd);
+        videoTask.setOldState(isAdd ? true : video.getOpen());
+        videoTask.setNewState(true);
+        videoPublishAuditService.audit(videoTask, false);
     }
 
     /**

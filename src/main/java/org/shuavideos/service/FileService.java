@@ -13,4 +13,12 @@ public interface FileService extends IService<File> {
      * @return
      */
     File getFileTrustUrl(Long fileId);
+
+
+    /**
+     * 根据视频id生成图片
+     * @param fileId
+     * @return
+     */
+    Long generatePhoto(Long fileId, Long userId);
 }

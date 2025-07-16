@@ -37,4 +37,7 @@ public interface RedisConstant {
 
     Long HISTORY_TIME = 432000L;
 
+    // 发布视频限流
+    String VIDEO_LIMIT = "video:limit";
+
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.shuavideos.constant.RedisConstant;
 import org.shuavideos.service.FeedService;
 import org.shuavideos.util.DateUtil;
+import org.shuavideos.util.RedisCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.DefaultTypedTuple;
 import org.springframework.data.redis.core.RedisCallback;
@@ -21,8 +22,10 @@ public class FeedServiceImpl implements FeedService {
 
 
     @Autowired
-    public RedisTemplate redisTemplate;
+    private RedisTemplate redisTemplate;
 
+    @Autowired
+    private RedisCacheUtil redisCacheUtil;
 
     @Override
     @Async
@@ -38,6 +41,25 @@ public class FeedServiceImpl implements FeedService {
         } else {
             update(userId,limitDate.getTime(),curDate.getTime(),followIds);
         }
+    }
+
+    @Override
+    @Async
+    public void deleteOutBoxFeed(Long userId,Collection<Long> fans,Long videoId) {
+        String t = RedisConstant.IN_FOLLOW;
+        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            for (Long fan : fans) {
+                connection.zRem((t+fan).getBytes(),String.valueOf(videoId).getBytes());
+            }
+            connection.zRem((RedisConstant.OUT_FOLLOW + userId).getBytes(), String.valueOf(videoId).getBytes());
+            return null;
+        });
+    }
+
+    @Override
+    @Async
+    public void pusOutBoxFeed(Long userId, Long videoId, Long time) {
+        redisCacheUtil.zadd(RedisConstant.OUT_FOLLOW + userId, time, videoId, -1);
     }
 
     public void update(Long userId, Long min, Long max, Collection<Long> followIds) {

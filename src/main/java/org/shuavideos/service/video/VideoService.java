@@ -84,4 +84,11 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     Collection<Video> followFeed(Long userId,Long lastTime);
+
+    /**
+     * 发布/修改视频
+     * 修改无法更换视频源
+     * @param video
+     */
+    void publishVideo(Video video);
 }

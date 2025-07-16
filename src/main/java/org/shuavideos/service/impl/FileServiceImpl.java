@@ -60,4 +60,17 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
         file.setFileKey(url);
         return file;
     }
+
+    @Override
+    public Long generatePhoto(Long fileId, Long userId) {
+        final File file = getById(fileId);;
+        final String fileKey = file.getFileKey() + "?vframe/jpg/offset/1";
+        final File fileInfo = new File();
+        fileInfo.setFileKey(fileKey);
+        fileInfo.setFormat("image/*");
+        fileInfo.setType("图片");
+        fileInfo.setUserId(userId);
+        save(fileInfo);
+        return fileInfo.getId();
+    }
 }

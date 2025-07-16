@@ -1,6 +1,7 @@
 package org.shuavideos.service;
 
 import org.shuavideos.entity.user.User;
+import org.shuavideos.entity.video.Video;
 import org.shuavideos.entity.vo.UserModel;
 
 import java.util.Collection;
@@ -46,4 +47,30 @@ public interface InterestPushService {
      */
     Collection<Long> listVideoIdByLabels(List<String> labelNames);
 
+    /**
+     * 删除标签内视频
+     * @param video
+     */
+    void deleteSystemStockIn(Video video);
+
+
+    /**
+     * 删除分类库中的视频
+     * @param video
+     */
+    void deleteSystemTypeStockIn(Video video);
+
+    /**
+     * 添加分类库,用于后续随机推送分类视频
+     * @param video
+     */
+    void pushSystemTypeStockIn(Video video);
+
+
+    /**
+     * 推入标签库
+     * 传videoId,typeId
+     * @param video
+     */
+    void pushSystemStockIn(Video video);
 }
