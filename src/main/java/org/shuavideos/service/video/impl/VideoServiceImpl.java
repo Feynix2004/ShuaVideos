@@ -39,10 +39,12 @@ import org.shuavideos.util.RedisCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -336,6 +338,59 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         videoPublishAuditService.audit(videoTask, false);
     }
 
+    @Override
+    @Async
+    public void historyVideo(Long videoId, Long userId) {
+        String key = RedisConstant.HISTORY_VIDEO + videoId + ":" + userId;
+        final Object o = redisCacheUtil.get(key);
+        if (o == null) {
+            redisCacheUtil.set(key, videoId, RedisConstant.HISTORY_TIME);
+            final Video video = getById(videoId);
+            video.setUser(userService.getInfo(video.getUserId()));
+            video.setTypeName(typeService.getById(video.getTypeId()).getName());
+            redisCacheUtil.zadd(RedisConstant.USER_HISTORY_VIDEO + userId, new Date().getTime(), video, RedisConstant.HISTORY_TIME);
+            updateHistory(video, 1L);
+        }
+    }
+
+    @Override
+    public LinkedHashMap<String, List<Video>> getHistory(BasePage basePage) {
+
+        final Long userId = UserHolder.get();
+        String key = RedisConstant.USER_HISTORY_VIDEO + userId;
+        final Set<ZSetOperations.TypedTuple<Object>> typedTuples = redisCacheUtil.zSetGetByPage(key, basePage.getPage(), basePage.getLimit());
+        if (ObjectUtils.isEmpty(typedTuples)) {
+            return new LinkedHashMap<>();
+        }
+        List<Video> temp = new ArrayList<>();
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        final LinkedHashMap<String, List<Video>> result = new LinkedHashMap<>();
+        for (ZSetOperations.TypedTuple<Object> typedTuple : typedTuples) {
+            final Date date = new Date(typedTuple.getScore().longValue());
+            final String format = simpleDateFormat.format(date);
+            if (!result.containsKey(format)) {
+                result.put(format, new ArrayList<>());
+            }
+            final Video video = (Video) typedTuple.getValue();
+            result.get(format).add(video);
+            temp.add(video);
+        }
+        setUserVoAndUrl(temp);
+
+        return result;
+    }
+
+    /**
+     * 浏览量
+     *
+     * @param video
+     */
+    public void updateHistory(Video video, Long value) {
+        final UpdateWrapper<Video> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.setSql("history_count = history_count + " + value);
+        updateWrapper.lambda().eq(Video::getId, video.getId());
+        update(video, updateWrapper);
+    }
     /**
      * 点赞数
      *

@@ -14,6 +14,9 @@ public interface RedisConstant {
 
     String USER_MODEL="user:model";
 
+    // 用于用户浏览记录  这里需要存video
+    String USER_HISTORY_VIDEO = "user:history:video:";
+
     // 用于兴趣推送时去重   和下面的浏览记录存储数据结构不同  这里只需要存id
     String HISTORY_VIDEO = "history:video:";
 

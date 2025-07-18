@@ -1,6 +1,7 @@
 package org.shuavideos.controller;
 
 import org.shuavideos.entity.video.Video;
+import org.shuavideos.entity.vo.BasePage;
 import org.shuavideos.holder.UserHolder;
 import org.shuavideos.limit.Limit;
 import org.shuavideos.service.video.VideoService;
@@ -66,4 +67,37 @@ public class VideoController {
         videoService.publishVideo(video);
         return R.ok().message("发布成功,请等待审核");
     }
+
+    /**
+     * 添加浏览记录
+     * @return
+     */
+    @PostMapping("/history/{id}")
+    public R addHistory(@PathVariable Long id) throws Exception {
+        videoService.historyVideo(id, UserHolder.get());
+        return R.ok();
+    }
+
+    /**
+     * 获取用户的浏览记录
+     * @return
+     */
+    @GetMapping("/history")
+    public R getHistory(BasePage basePage){
+        return R.ok().data(videoService.getHistory(basePage));
+    }
+
+
+    /**
+     * 点赞视频
+     */
+    @PostMapping("/star/{id}")
+    public R starVideo(@PathVariable Long id){
+        String msg = "已点赞";
+        if (!videoService.startVideo(id)) {
+            msg = "取消点赞";
+        }
+        return R.ok().message(msg);
+    }
+
 }

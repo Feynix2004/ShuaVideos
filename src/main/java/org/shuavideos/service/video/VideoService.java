@@ -7,6 +7,7 @@ import org.shuavideos.entity.vo.BasePage;
 import org.shuavideos.entity.vo.HotVideo;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public interface VideoService extends IService<Video> {
@@ -91,4 +92,17 @@ public interface VideoService extends IService<Video> {
      * @param video
      */
     void publishVideo(Video video);
+
+
+    /**
+     * 添加浏览记录
+     * @param videoId
+     */
+    void historyVideo(Long videoId, Long userId);
+
+    /**
+     * 获取当前用户浏览记录,带分页
+     * @return
+     */
+    LinkedHashMap<String, List<Video>> getHistory(BasePage basePage);
 }
