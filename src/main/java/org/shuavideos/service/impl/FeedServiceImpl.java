@@ -62,6 +62,17 @@ public class FeedServiceImpl implements FeedService {
         redisCacheUtil.zadd(RedisConstant.OUT_FOLLOW + userId, time, videoId, -1);
     }
 
+    @Override
+    public void pushInBoxFeed(Long userId, Long id, long time) {
+        // 需要推吗这个场景？只需要拉
+    }
+
+    @Override
+    public void deleteInBoxFeed(Long userId, List<Long> videoIds) {
+        redisTemplate.opsForZSet().remove(RedisConstant.IN_FOLLOW + userId, videoIds.toArray());
+
+    }
+
     public void update(Long userId, Long min, Long max, Collection<Long> followIds) {
         String t1 = RedisConstant.OUT_FOLLOW;
         String t2 = RedisConstant.IN_FOLLOW;

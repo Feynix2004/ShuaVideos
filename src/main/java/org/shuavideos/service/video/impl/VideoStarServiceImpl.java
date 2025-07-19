@@ -24,4 +24,12 @@ public class VideoStarServiceImpl extends ServiceImpl<VideoStarMapper, VideoStar
         }
 
     }
+
+    @Override
+    public Boolean starState(Long videoId, Long userId) {
+
+        if (userId == null) return  false;
+
+        return this.count(new LambdaQueryWrapper<VideoStar>().eq(VideoStar::getVideoId,videoId).eq(VideoStar::getUserId,userId)) == 1;
+    }
 }

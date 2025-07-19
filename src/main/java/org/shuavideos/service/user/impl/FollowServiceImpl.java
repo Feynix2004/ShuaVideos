@@ -114,4 +114,10 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         }
         return typedTuples.stream().map(t -> Long.parseLong(t.getValue().toString())).collect(Collectors.toList());
     }
+
+    @Override
+    public Boolean isFollows(Long followId, Long userId) {
+        if (userId == null || followId == null) return false;
+        return count(new LambdaQueryWrapper<Follow>().eq(Follow::getFollowId,followId).eq(Follow::getUserId,userId)) == 1;
+    }
 }

@@ -1,6 +1,7 @@
 package org.shuavideos.service;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface FeedService {
 
@@ -30,4 +31,15 @@ public interface FeedService {
      * @param videoId 视频id
      */
     void pusOutBoxFeed(Long userId,Long videoId,Long time);
+
+    void pushInBoxFeed(Long userId, Long id, long time);
+
+    /**
+     * 删除收件箱
+     * 当前用户取关用户时调用
+     * 删除自己收件箱中的videoIds
+     * @param userId
+     * @param videoIds 关注人发的视频id
+     */
+    void deleteInBoxFeed(Long userId, List<Long> videoIds);
 }

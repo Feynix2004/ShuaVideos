@@ -19,6 +19,15 @@ public interface VideoService extends IService<Video> {
     IPage<Video> listByUserIdOpenVideo(Long userId, BasePage basePage);
 
     /**
+     * 获取视频信息
+     * @param id
+     * @param userId 当前用户id
+     * @return
+     */
+    Video getVideoById(Long id,Long userId);
+
+
+    /**
      * 收藏视频
      *
      * @param fId
@@ -105,4 +114,10 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     LinkedHashMap<String, List<Video>> getHistory(BasePage basePage);
+
+    void deleteVideo(Long id);
+
+    void auditProcess(Video video);
+
+    void violations(Long id);
 }

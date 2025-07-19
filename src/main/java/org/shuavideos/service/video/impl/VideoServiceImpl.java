@@ -16,6 +16,7 @@ import org.shuavideos.entity.task.VideoTask;
 import org.shuavideos.entity.user.User;
 import org.shuavideos.entity.video.Type;
 import org.shuavideos.entity.video.Video;
+import org.shuavideos.entity.video.VideoShare;
 import org.shuavideos.entity.video.VideoStar;
 import org.shuavideos.entity.vo.BasePage;
 import org.shuavideos.entity.vo.HotVideo;
@@ -33,6 +34,7 @@ import org.shuavideos.service.user.FollowService;
 import org.shuavideos.service.user.UserService;
 import org.shuavideos.service.video.TypeService;
 import org.shuavideos.service.video.VideoService;
+import org.shuavideos.service.video.VideoShareService;
 import org.shuavideos.service.video.VideoStarService;
 import org.shuavideos.util.FileUtil;
 import org.shuavideos.util.RedisCacheUtil;
@@ -85,6 +87,10 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Autowired
     private FeedService feedService;
 
+    @Autowired
+    private VideoShareService videoShareService;
+
+
     final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -99,6 +105,23 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         final List<Video> videos = page.getRecords();
         setUserVoAndUrl(videos);
         return page;
+    }
+
+    @Override
+    public Video getVideoById(Long videoId, Long userId) {
+        final Video video = this.getOne(new LambdaQueryWrapper<Video>().eq(Video::getId, videoId));
+        if (video == null) throw new BaseException("指定视频不存在");
+
+        // 私密则返回为空
+        if (video.getOpen()) return new Video();
+        setUserVoAndUrl(Collections.singleton(video));
+        // 当前视频用户自己是否有收藏/点赞过等信息
+        // 这里需要优化 如果这里开线程获取则系统g了(因为这里的场景不适合) -> 请求数很多
+        // 正确做法: 视频存储在redis中，点赞收藏等行为异步放入DB, 定时任务扫描DB中不重要更新redis
+        video.setStart(videoStarService.starState(videoId, userId));
+        video.setFavorites(favoritesService.favoritesState(videoId, userId));
+        video.setFollow(followService.isFollows(video.getUserId(), userId));
+        return video;
     }
 
     @Override
@@ -378,6 +401,76 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         setUserVoAndUrl(temp);
 
         return result;
+    }
+
+    @Override
+    public void deleteVideo(Long id) {
+        if (id == null) {
+            throw new BaseException("删除指定的视频不存在");
+        }
+
+        final Long userId = UserHolder.get();
+        final Video video = this.getOne(new LambdaQueryWrapper<Video>().eq(Video::getId, id).eq(Video::getUserId, userId));
+        if (video == null) {
+            throw new BaseException("删除指定的视频不存在");
+        }
+        final boolean b = removeById(id);
+        if (b) {
+            // 解耦
+            new Thread(() -> {
+                // 删除分享量 点赞量
+                videoShareService.remove(new LambdaQueryWrapper<VideoShare>().eq(VideoShare::getVideoId, id).eq(VideoShare::getUserId, userId));
+                videoStarService.remove(new LambdaQueryWrapper<VideoStar>().eq(VideoStar::getVideoId, id).eq(VideoStar::getUserId, userId));
+                interestPushService.deleteSystemStockIn(video);
+                interestPushService.deleteSystemTypeStockIn(video);
+            }).start();
+        }
+    }
+
+    @Override
+    public void auditProcess(Video video) {
+        // 放行后
+        updateById(video);
+        interestPushService.pushSystemStockIn(video);
+        interestPushService.pushSystemTypeStockIn(video);
+        // 推送该视频博主的发件箱
+        feedService.pushInBoxFeed(video.getUserId(), video.getId(), video.getGmtCreated().getTime());
+
+    }
+
+    @Override
+    public void violations(Long id) {
+        final Video video = getById(id);
+        final Type type = typeService.getById(video.getTypeId());
+        video.setLabelNames(type.getLabelNames());
+        // 修改视频信息
+        video.setOpen(true);
+        video.setMsg("该视频违反了幸运日平台的规则,已被下架私密");
+        video.setAuditStatus(AuditStatus.PASS);
+        // 删除分类中的视频
+        interestPushService.deleteSystemTypeStockIn(video);
+        // 删除标签中的视频
+        interestPushService.deleteSystemStockIn(video);
+        // 获取视频发布者id,删除对应的发件箱
+        final Long userId = video.getUserId();
+        redisTemplate.opsForZSet().remove(RedisConstant.OUT_FOLLOW + userId, id);
+
+        // 获取视频发布者粉丝，删除对应的收件箱
+        final Collection<Long> fansIds = followService.getFans(userId, null);
+        feedService.deleteInBoxFeed(userId, Collections.singletonList(id));
+        feedService.deleteOutBoxFeed(userId, fansIds, id);
+
+        // 热门视频以及热度排行榜视频
+        Calendar calendar = Calendar.getInstance();
+        int today = calendar.get(Calendar.DATE);
+        final Long videoId = video.getId();
+        // 尝试去找到删除
+        redisTemplate.opsForSet().remove(RedisConstant.HOT_VIDEO + today, videoId);
+        redisTemplate.opsForSet().remove(RedisConstant.HOT_VIDEO + (today - 1), videoId);
+        redisTemplate.opsForSet().remove(RedisConstant.HOT_VIDEO + (today - 2), videoId);
+        redisTemplate.opsForZSet().remove(RedisConstant.HOT_RANK, videoId);
+        // 修改视频
+        updateById(video);
     }
 
     /**

@@ -9,4 +9,6 @@ public interface VideoStarService extends IService<VideoStar> {
      * @param videoStar
      */
     boolean starVideo(VideoStar videoStar);
+
+    Boolean starState(Long videoId, Long userId);
 }

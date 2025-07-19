@@ -44,4 +44,6 @@ public interface FollowService extends IService<Follow> {
      * @return
      */
     Collection<Long> getFans(Long userId, BasePage basePage);
+
+    Boolean isFollows(Long followId, Long userId);
 }
